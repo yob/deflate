@@ -14,7 +14,9 @@ at implementing a decompressor in pure ruby.
 
 I'm not using this in the real world anywhere, and you probably shouldn't either.
 
-The API is unstable - refer to `spec/integration_spec.rb` for examples.
+## Usage
+
+The API is unstable - refer to `spec/integration_spec.rb` for current examples.
 
 ## Tests
 
