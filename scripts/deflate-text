@@ -1,0 +1,11 @@
+#!/usr/bin/env ruby
+
+# create a sample file compressed with RFC1951
+#
+# USAGE: echo "hello world" | ./defalte-text > output.z 
+
+require 'zlib'
+
+data_to_compress = $stdin.read
+
+puts Zlib::Deflate.deflate(data_to_compress)

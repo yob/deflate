@@ -1,0 +1,19 @@
+#!/usr/bin/env ruby
+
+require 'deflate'
+
+path = ARGV.shift
+
+File.open(path, "rb") do |file|
+  result = Deflate::File.new(file)
+
+  puts "compression_info: #{result.compression_info}"
+  puts "compression_method: #{result.compression_method}"
+  puts "compression_level: #{result.compression_level}"
+  puts "has_dict: #{result.has_dict}"
+  puts "checksum: #{result.checksum}"
+  puts "window_size: #{result.window_size} bytes"
+  puts
+  puts "************ decompressed output ***********"
+  puts result.out
+end
