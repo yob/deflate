@@ -16,6 +16,13 @@ I'm not using this in the real world anywhere, and you probably shouldn't either
 
 The API is unstable - refer to `spec/integration_spec.rb` for examples.
 
+## Tests
+
+Run the tests like this:
+
+    bundle
+    bundle exec rspec
+
 ## Further Reading
 
 * Deflate data format: https://tools.ietf.org/html/rfc1951
