@@ -27,18 +27,23 @@ module Deflate
       @values = []
       bootstrap.each do |symbol_range, bit_count|
         symbol_range.each do |symbol|
-          @values << HuffmanLength.new(symbol: symbol, bit_count: bit_count)
+          if bit_count > 0
+            @values << HuffmanLength.new(symbol: symbol, bit_count: bit_count)
+          end
         end
       end
-      @values.sort
       populate_huffman_codes
+      @values.sort_by!(&:code)
     end
 
-    def lookup(code, bit_count)
-      result = @values.detect { |value|
-        value.reverse_code == code && value.bit_count == bit_count
-      }
-      result && result.symbol
+    def lookup(stream)
+      @values.each do |value|
+        if value.reverse_code == stream.send(:peekbits, value.bit_count) # && value.bit_count == bit_count
+          stream.send(:readbits, value.bit_count)
+          return value.symbol
+        end
+      end
+      return nil
     end
 
     def inspect

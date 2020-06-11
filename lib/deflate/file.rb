@@ -59,17 +59,7 @@ module Deflate
             main_distances = HuffmanTable.new({(0..31) => 5})
 
             loop do
-              symbol = nil
-              if symbol = main_literals.lookup(stream.peek_bit7, 7)
-                stream.read_bit7 # consume bits
-              elsif symbol = main_literals.lookup(stream.peek_bit8, 8)
-                stream.read_bit8 # consume bits
-              elsif symbol = main_literals.lookup(stream.peek_bit9, 9)
-                stream.read_bit9 # consume bits
-              else
-                $stderr.puts "no matching symbol in table"
-                exit
-              end
+              symbol = main_literals.lookup(stream)
               if symbol < 256
                 @out += symbol.chr
               elsif symbol == 256
@@ -83,19 +73,71 @@ module Deflate
               break if stream.eof?
             end
           elsif encoding_method == 2 # Dynamic Huffman
-            raise "Can't process blocks of type #{encoding_method} yet"
-            #literals = stream.read_bit5 + 257
-            #distances = stream.read_bit5 + 1
-            #code_lengths_length = stream.read_bit4 + 4
-            #puts "literals: #{literals}"
-            #puts "distances: #{distances}"
-            #puts "code_lengths_length: #{code_lengths_length}"
+            literals = stream.read_bit5 + 257
+            distances = stream.read_bit5 + 1
+            code_lengths_length = stream.read_bit4 + 4
 
-            #l = [0] * 19
-            #(0..code_lengths_length).each do |i|
-            #  l[CODE_LENGTH_ORDERS[i]] = stream.read_bit3
-            #end
-            #puts l.inspect
+            l = [0] * 19
+            code_lengths_length.times do |i|
+              l[CODE_LENGTH_ORDERS[i]] = stream.read_bit3
+            end
+            l[14] = 0 # TODO remove?
+            bootstrap = {}
+            l.each_with_index do |length, i|
+              bootstrap[(i..i)] = length
+            end
+            dynamic_codes = HuffmanTable.new(bootstrap)
+
+            code_lengths = []
+
+            while code_lengths.size < (literals + distances) do
+              symbol = dynamic_codes.lookup(stream)
+
+              if symbol >= 0 && symbol <= 15
+                code_lengths << symbol
+              elsif symbol == 16 # repeast the last code 3-6 times
+                last_length = code_lengths.last
+                (stream.read_bit2 + 3).times do
+                  code_lengths << last_length
+                end
+              elsif symbol == 17 # repeat code length 0 3-10 times
+                (stream.read_bit3 + 3).times do
+                  code_lengths << 0
+                end
+              elsif symbol == 18 # repeat code length 0 11-138 times
+                (stream.read_bit7 + 11).times do
+                  code_lengths << 0
+                end
+              else
+                raise "unexpected code lenght. #{symbol} should be <= 17"
+              end
+
+            end
+            main_literals_bootstrap = {}
+            code_lengths[0,literals].each_with_index do |length, i|
+              main_literals_bootstrap[(i..i)] = length
+            end
+            main_literals = HuffmanTable.new(main_literals_bootstrap)
+
+            main_distances_bootstrap = {}
+            code_lengths[literals,literals.size].each_with_index do |length, i|
+              main_distances_bootstrap[(i..i)] = length
+            end
+            main_distances = HuffmanTable.new(main_distances_bootstrap)
+            loop do
+              symbol = main_literals.lookup(stream)
+
+              if symbol < 256
+                @out += symbol.chr
+              elsif symbol == 256
+                break # end of the block
+              elsif symbol >= 257 && symbol <= 285
+                # TODO implment reading data from earlier in the output stream
+                raise "reading data from earlier in the output stream not implemented yet"
+              else
+                raise "unexpected literal value #{symbol}"
+              end
+            end
           end
         else
           raise "Can't process blocks of type #{encoding_method} yet"
