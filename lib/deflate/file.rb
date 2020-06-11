@@ -37,60 +37,70 @@ module Deflate
         raise "Can't process files that require a dict"
       end
 
-      last_block = stream.read_bit1_bool
-      encoding_method = stream.read_bit2
-
       @out = ""
 
-      if encoding_method == 1 || encoding_method == 2
-
-        if encoding_method == 1 # Static Huffman
-          main_literals = HuffmanTable.new(
-            {(0..143) => 8, (144..255) => 9, (256..279) => 7, (280..287) => 8}
-          )
-          main_distances = HuffmanTable.new({(0..31) => 5})
-
-          loop do
-            symbol = nil
-            if symbol = main_literals.lookup(stream.peek_bit7, 7)
-              stream.read_bit7 # consume bits
-            elsif symbol = main_literals.lookup(stream.peek_bit8, 8)
-              stream.read_bit8 # consume bits
-            elsif symbol = main_literals.lookup(stream.peek_bit9, 9)
-              stream.read_bit9 # consume bits
-            else
-              $stderr.puts "no matching symbol in table"
-              exit
-            end
-            if symbol < 256 
-              @out += symbol.chr
-            elsif symbol == 256
-              break # end of the block
-            elsif symbol >= 257 && symbol <= 285
-              # TODO implment reading data from earlier in the output stream
-              $stderr.puts "reading data from earlier in the output stream not implemented yet"
-            else
-              $stderr.puts "unexpected literal value #{symbol}"
-            end
-            break if stream.eof?
+      loop do
+        last_block = stream.read_bit1_bool
+        encoding_method = stream.read_bit2
+        if encoding_method == 0 # No compression
+          stream.align # consume the remaining bits of the current byte
+          len = stream.read_uint16
+          nlen = stream.read_uint16
+          # TODO confirm len and nlen match
+          len.times do
+            @out += stream.read_bit8.chr
           end
-        elsif encoding_method == 2 # Dynamic Huffman
-          raise "Can't process blocks of type #{encoding_method} yet"
-          #literals = stream.read_bit5 + 257
-          #distances = stream.read_bit5 + 1
-          #code_lengths_length = stream.read_bit4 + 4
-          #puts "literals: #{literals}"
-          #puts "distances: #{distances}"
-          #puts "code_lengths_length: #{code_lengths_length}"
+        elsif encoding_method == 1 || encoding_method == 2
 
-          #l = [0] * 19
-          #(0..code_lengths_length).each do |i|
-          #  l[CODE_LENGTH_ORDERS[i]] = stream.read_bit3
-          #end
-          #puts l.inspect
+          if encoding_method == 1 # Static Huffman
+            main_literals = HuffmanTable.new(
+              {(0..143) => 8, (144..255) => 9, (256..279) => 7, (280..287) => 8}
+            )
+            main_distances = HuffmanTable.new({(0..31) => 5})
+
+            loop do
+              symbol = nil
+              if symbol = main_literals.lookup(stream.peek_bit7, 7)
+                stream.read_bit7 # consume bits
+              elsif symbol = main_literals.lookup(stream.peek_bit8, 8)
+                stream.read_bit8 # consume bits
+              elsif symbol = main_literals.lookup(stream.peek_bit9, 9)
+                stream.read_bit9 # consume bits
+              else
+                $stderr.puts "no matching symbol in table"
+                exit
+              end
+              if symbol < 256
+                @out += symbol.chr
+              elsif symbol == 256
+                break # end of the block
+              elsif symbol >= 257 && symbol <= 285
+                # TODO implment reading data from earlier in the output stream
+                $stderr.puts "reading data from earlier in the output stream not implemented yet"
+              else
+                $stderr.puts "unexpected literal value #{symbol}"
+              end
+              break if stream.eof?
+            end
+          elsif encoding_method == 2 # Dynamic Huffman
+            raise "Can't process blocks of type #{encoding_method} yet"
+            #literals = stream.read_bit5 + 257
+            #distances = stream.read_bit5 + 1
+            #code_lengths_length = stream.read_bit4 + 4
+            #puts "literals: #{literals}"
+            #puts "distances: #{distances}"
+            #puts "code_lengths_length: #{code_lengths_length}"
+
+            #l = [0] * 19
+            #(0..code_lengths_length).each do |i|
+            #  l[CODE_LENGTH_ORDERS[i]] = stream.read_bit3
+            #end
+            #puts l.inspect
+          end
+        else
+          raise "Can't process blocks of type #{encoding_method} yet"
         end
-      else
-        raise "Can't process blocks of type #{encoding_method} yet"
+        break if last_block
       end
     end
   end

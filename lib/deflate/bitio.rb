@@ -6,8 +6,17 @@ module Deflate
       @bitfield = 0x0
     end
 
+    # move ahead to the start of the next byte
+    def align
+      readbits(@bits & 0x7)
+    end
+
     def read_uint8
       readbits(8)
+    end
+
+    def read_uint16
+      readbits(16)
     end
 
     def read_bit1

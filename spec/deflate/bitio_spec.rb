@@ -3,6 +3,10 @@ require 'rspec'
 RSpec.describe Deflate::BitIO do
   let(:bitio) { Deflate::BitIO.new(input)}
 
+  describe "#align" do
+    it "consumes the remaining bits in the current byte"
+  end
+
   describe "#read_uint8" do
     let(:input) { StringIO.new("\x00\x7F\xFF") }
 
@@ -11,6 +15,12 @@ RSpec.describe Deflate::BitIO do
       expect(bitio.read_uint8).to eql(127)
       expect(bitio.read_uint8).to eql(255)
     end
+  end
+
+  describe "#read_uint16" do
+    let(:input) { StringIO.new("\x00\x7F\xFF") }
+
+    it "reads the next 2 bytes and interprets them as an unsigned int"
   end
 
   describe "#read_bit1" do

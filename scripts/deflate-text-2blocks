@@ -1,0 +1,21 @@
+#!/usr/bin/env ruby
+
+# create a sample file compressed with RFC1951
+#
+# USAGE: echo "hello world" | ./defalte-text > output.z 
+
+require 'zlib'
+require 'stringio'
+
+text = [
+  "hello world, ",
+  "2020 is quite the year",
+]
+
+#puts Zlib::Deflate.deflate(data_to_compress)
+output = StringIO.new
+deflate = Zlib::Deflate.new
+output << deflate.deflate("hello world, ", Zlib::FULL_FLUSH )
+output << deflate.deflate("2020 is quite the year", Zlib::FINISH )
+deflate.close
+puts output.string
