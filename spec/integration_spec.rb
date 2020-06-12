@@ -39,11 +39,13 @@ RSpec.describe "Integration" do
   # * a single deflate block, encoding type 2 (dynamic huffman)
   context "with lorem-ipsum.z" do
     let(:path) { File.join(File.expand_path(File.dirname(__FILE__)), "fixtures", "lorem-ipsum.z") }
+    let(:result_path) { File.join(File.expand_path(File.dirname(__FILE__)), "fixtures", "lorem-ipsum.txt") }
+    let(:uncompressed_text) { File.read(result_path) }
 
     it "can decompress the file" do
       File.open(path, "rb") do |io|
         file = Deflate::File.new(io)
-        expect(file.out).to eql("hello world\n")
+        expect(file.out).to eql(uncompressed_text)
       end
     end
   end
