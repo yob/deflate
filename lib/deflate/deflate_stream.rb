@@ -184,7 +184,7 @@ module Deflate
             end
           end
         else
-          raise "Can't process blocks of type #{encoding_method} yet"
+          raise "Unexpected block encoding_method (#{encoding_method})"
         end
         result_block.output = @out[output_start_pos..]
         yield result_block
