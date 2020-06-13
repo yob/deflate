@@ -33,6 +33,21 @@ RSpec.describe "Integration" do
     end
   end
 
+  # hello-world-no-compression.z is:
+  #
+  # * zlib container format
+  # * a single deflate block, encoding type 0 (no compression)
+  context "with hello-world-no-compression.z" do
+    let(:path) { File.join(File.expand_path(File.dirname(__FILE__)), "fixtures", "hello-world-no-compression.z") }
+
+    it "can decompress the file" do
+      File.open(path, "rb") do |io|
+        file = Deflate::File.new(io)
+        expect(file.out).to eql("hello world, 2020 is quite the year")
+      end
+    end
+  end
+
   # lorem-ipsum.z is:
   #
   # * zlib container format
