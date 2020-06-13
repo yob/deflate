@@ -2,7 +2,7 @@ module Deflate
   class File
 
     attr_reader :compression_info, :compression_method, :compression_level, :has_dict
-    attr_reader :checksum, :out
+    attr_reader :checksum
 
     def initialize(io)
       @io = io
