@@ -2,6 +2,11 @@ require 'rspec'
 
 RSpec.describe "Integration" do
   let(:bitio) { Deflate::BitIO.new(input)}
+  let(:output) { 
+    File.open(path, "rb") do |io|
+      Deflate::File.inflate(io)
+    end
+  }
 
   # hello-world.z is:
   #
@@ -11,10 +16,7 @@ RSpec.describe "Integration" do
     let(:path) { File.join(File.expand_path(File.dirname(__FILE__)), "fixtures", "hello-world.z") }
 
     it "can decompress the file" do
-      File.open(path, "rb") do |io|
-        file = Deflate::File.new(io)
-        expect(file.out).to eql("hello world\n")
-      end
+      expect(output).to eql("hello world\n")
     end
   end
 
@@ -26,10 +28,7 @@ RSpec.describe "Integration" do
     let(:path) { File.join(File.expand_path(File.dirname(__FILE__)), "fixtures", "hello-world-multiple-blocks.z") }
 
     it "can decompress the file" do
-      File.open(path, "rb") do |io|
-        file = Deflate::File.new(io)
-        expect(file.out).to eql("hello world, 2020 is quite the year")
-      end
+      expect(output).to eql("hello world, 2020 is quite the year")
     end
   end
 
@@ -41,10 +40,7 @@ RSpec.describe "Integration" do
     let(:path) { File.join(File.expand_path(File.dirname(__FILE__)), "fixtures", "hello-world-no-compression.z") }
 
     it "can decompress the file" do
-      File.open(path, "rb") do |io|
-        file = Deflate::File.new(io)
-        expect(file.out).to eql("hello world, 2020 is quite the year")
-      end
+      expect(output).to eql("hello world, 2020 is quite the year")
     end
   end
 
@@ -58,10 +54,7 @@ RSpec.describe "Integration" do
     let(:uncompressed_text) { File.read(result_path) }
 
     it "can decompress the file" do
-      File.open(path, "rb") do |io|
-        file = Deflate::File.new(io)
-        expect(file.out).to eql(uncompressed_text)
-      end
+      expect(output).to eql(uncompressed_text)
     end
   end
 end
