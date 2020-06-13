@@ -100,26 +100,14 @@ module Deflate
           end
         elsif encoding_method == 1 || encoding_method == 2
 
+          main_literals = nil
+          main_distances = nil
+
           if encoding_method == 1 # Static Huffman
             main_literals = HuffmanTable.new(
               {(0..143) => 8, (144..255) => 9, (256..279) => 7, (280..287) => 8}
             )
             main_distances = HuffmanTable.new({(0..31) => 5})
-
-            loop do
-              symbol = main_literals.lookup(@stream)
-              if symbol < 256
-                @out += symbol.chr
-              elsif symbol == 256
-                break # end of the block
-              elsif symbol >= 257 && symbol <= 285
-                # TODO implment reading data from earlier in the output stream
-                $stderr.puts "reading data from earlier in the output stream not implemented yet"
-              else
-                $stderr.puts "unexpected literal value #{symbol}"
-              end
-              break if @stream.eof?
-            end
           elsif encoding_method == 2 # Dynamic Huffman
             literals = @stream.read_bits(5) + 257
             distances = @stream.read_bits(5) + 1
@@ -171,27 +159,28 @@ module Deflate
               main_distances_bootstrap[(i..i)] = length
             end
             main_distances = HuffmanTable.new(main_distances_bootstrap)
-            loop do
-              symbol = main_literals.lookup(@stream)
+          end
 
-              if symbol < 256
-                @out += symbol.chr
-              elsif symbol == 256
-                break # end of the block
-              elsif symbol >= 257 && symbol <= 285
-                length_extra = @stream.read_bits(EXTRA_LENGTH_BITS.fetch(symbol, 0))
-                length = LENGTH_BASE[symbol-257] + length_extra
+          loop do
+            symbol = main_literals.lookup(@stream)
 
-                symbol_distance = main_distances.lookup(@stream)
-                if symbol_distance && symbol_distance >= 0 && symbol_distance <= 29
-                  distance = DISTANCE_BASE[symbol_distance] + @stream.read_bits(EXTRA_DISTANCE_BITS.fetch(symbol_distance))
-                  @out += @out[-distance, length]
-                else
-                  raise "unexpected distance value (#{symbol_distance})"
-                end
+            if symbol < 256
+              @out += symbol.chr
+            elsif symbol == 256
+              break # end of the block
+            elsif symbol >= 257 && symbol <= 285
+              length_extra = @stream.read_bits(EXTRA_LENGTH_BITS.fetch(symbol, 0))
+              length = LENGTH_BASE[symbol-257] + length_extra
+
+              symbol_distance = main_distances.lookup(@stream)
+              if symbol_distance && symbol_distance >= 0 && symbol_distance <= 29
+                distance = DISTANCE_BASE[symbol_distance] + @stream.read_bits(EXTRA_DISTANCE_BITS.fetch(symbol_distance))
+                @out += @out[-distance, length]
               else
-                raise "unexpected literal value (#{symbol})"
+                raise "unexpected distance value (#{symbol_distance})"
               end
+            else
+              raise "unexpected literal value (#{symbol})"
             end
           end
         else

@@ -12,11 +12,25 @@ RSpec.describe "Integration" do
   #
   # * zlib container format
   # * a single deflate block, encoding type 1 (static huffman)
+  # * only literals are encoded in the huffman table, no length/distance pairs
   context "with hello-world.z" do
     let(:path) { File.join(File.expand_path(File.dirname(__FILE__)), "fixtures", "hello-world.z") }
 
     it "can decompress the file" do
       expect(output).to eql("hello world\n")
+    end
+  end
+
+  # gemfile.z is:
+  #
+  # * zlib container format
+  # * a single deflate block, encoding type 1 (static huffman)
+  # * huffman table has a mixture of literals and length/distance pairs
+  context "with gemfile.z" do
+    let(:path) { File.join(File.expand_path(File.dirname(__FILE__)), "fixtures", "gemfile.z") }
+
+    it "can decompress the file" do
+      expect(output).to eql("source \"https://rubygems.org\"\n\ngemspec\n")
     end
   end
 
