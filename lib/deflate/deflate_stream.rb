@@ -129,7 +129,6 @@ module Deflate
             code_lengths_length.times do |i|
               l[CODE_LENGTH_ORDERS[i]] = @stream.read_bits(3)
             end
-            l[14] = 0 # TODO remove?
             bootstrap = {}
             l.each_with_index do |length, i|
               bootstrap[(i..i)] = length
