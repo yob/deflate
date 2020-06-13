@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+
+require 'deflate'
+
+path = ARGV.shift
+
+File.open(path, "rb") do |file|
+  puts Deflate::File.inflate(file)
+end
