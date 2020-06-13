@@ -38,8 +38,8 @@ module Deflate
 
     def lookup(stream)
       @values.each do |value|
-        if value.reverse_code == stream.send(:peekbits, value.bit_count) # && value.bit_count == bit_count
-          stream.send(:readbits, value.bit_count)
+        if value.reverse_code == stream.peek_bits(value.bit_count) # && value.bit_count == bit_count
+          stream.read_bits(value.bit_count)
           return value.symbol
         end
       end

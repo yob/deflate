@@ -91,12 +91,12 @@ module Deflate
     def read_input_stream
       stream = BitIO.new(@io)
 
-      @compression_method = stream.read_bit4
-      @compression_info = stream.read_bit4
+      @compression_method = stream.read_bits(4)
+      @compression_info = stream.read_bits(4)
 
-      @checksum = stream.read_bit5
-      @has_dict = stream.read_bit1_bool
-      @compression_level = stream.read_bit2
+      @checksum = stream.read_bits(5)
+      @has_dict = stream.read_bit_bool
+      @compression_level = stream.read_bits(2)
 
       if @has_dict
         raise "Can't process files that require a dict"
@@ -105,15 +105,15 @@ module Deflate
       @out = ""
 
       loop do
-        last_block = stream.read_bit1_bool
-        encoding_method = stream.read_bit2
+        last_block = stream.read_bit_bool
+        encoding_method = stream.read_bits(2)
         if encoding_method == 0 # No compression
           stream.align # consume the remaining bits of the current byte
           len = stream.read_uint16
           nlen = stream.read_uint16
           # TODO confirm len and nlen match
           len.times do
-            @out += stream.read_bit8.chr
+            @out += stream.read_bits(8).chr
           end
         elsif encoding_method == 1 || encoding_method == 2
 
@@ -138,13 +138,13 @@ module Deflate
               break if stream.eof?
             end
           elsif encoding_method == 2 # Dynamic Huffman
-            literals = stream.read_bit5 + 257
-            distances = stream.read_bit5 + 1
-            code_lengths_length = stream.read_bit4 + 4
+            literals = stream.read_bits(5) + 257
+            distances = stream.read_bits(5) + 1
+            code_lengths_length = stream.read_bits(4) + 4
 
             l = [0] * 19
             code_lengths_length.times do |i|
-              l[CODE_LENGTH_ORDERS[i]] = stream.read_bit3
+              l[CODE_LENGTH_ORDERS[i]] = stream.read_bits(3)
             end
             l[14] = 0 # TODO remove?
             bootstrap = {}
@@ -162,15 +162,15 @@ module Deflate
                 code_lengths << symbol
               elsif symbol == 16 # repeast the last code 3-6 times
                 last_length = code_lengths.last
-                (stream.read_bit2 + 3).times do
+                (stream.read_bits(2) + 3).times do
                   code_lengths << last_length
                 end
               elsif symbol == 17 # repeat code length 0 3-10 times
-                (stream.read_bit3 + 3).times do
+                (stream.read_bits(3) + 3).times do
                   code_lengths << 0
                 end
               elsif symbol == 18 # repeat code length 0 11-138 times
-                (stream.read_bit7 + 11).times do
+                (stream.read_bits(7) + 11).times do
                   code_lengths << 0
                 end
               else
@@ -197,12 +197,12 @@ module Deflate
               elsif symbol == 256
                 break # end of the block
               elsif symbol >= 257 && symbol <= 285
-                length_extra = stream.send(:readbits, EXTRA_LENGTH_BITS.fetch(symbol, 0))
+                length_extra = stream.read_bits(EXTRA_LENGTH_BITS.fetch(symbol, 0))
                 length = LENGTH_BASE[symbol-257] + length_extra
 
                 symbol_distance = main_distances.lookup(stream)
                 if symbol_distance && symbol_distance >= 0 && symbol_distance <= 29
-                  distance = DISTANCE_BASE[symbol_distance] + stream.send(:readbits, EXTRA_DISTANCE_BITS.fetch(symbol_distance))
+                  distance = DISTANCE_BASE[symbol_distance] + stream.read_bits(EXTRA_DISTANCE_BITS.fetch(symbol_distance))
                   @out += @out[-distance, length]
                 else
                   raise "unexpected distance value (#{symbol_distance})"
