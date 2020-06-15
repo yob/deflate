@@ -71,4 +71,30 @@ RSpec.describe "Integration" do
       expect(output).to eql(uncompressed_text)
     end
   end
+
+  # hello-world-multiple-blocks.deflate is:
+  #
+  # * raw deflate (RFC1951) blocks, no container
+  context "with hello-world-multiple-blocks.deflate" do
+    let(:path) { File.join(File.expand_path(File.dirname(__FILE__)), "fixtures", "hello-world-multiple-blocks.deflate") }
+    let(:uncompressed_text) { "hello world, 2020 is quite the year" }
+
+    it "can decompress the file" do
+      pending
+      expect(output).to eql(uncompressed_text)
+    end
+  end
+
+  # hello-world,gz is:
+  #
+  # * gzip container format
+  context "with hello-world.gz" do
+    let(:path) { File.join(File.expand_path(File.dirname(__FILE__)), "fixtures", "hello-world.gz") }
+    let(:uncompressed_text) { "hello world, 2020 is quite the year" }
+
+    it "can decompress the file" do
+      pending
+      expect(output).to eql(uncompressed_text)
+    end
+  end
 end
